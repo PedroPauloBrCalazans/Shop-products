@@ -1,15 +1,12 @@
+import { GetStaticProps } from "next";
 import Image from "next/image";
 
 import { useKeenSlider } from "keen-slider/react";
-
 import { HomeContainer, Product } from "../styles/pages/home";
-
-import camiseta1 from "../assets/camisetas/1.jpg";
-
-import "keen-slider/keen-slider.min.css";
-import { GetServerSideProps } from "next";
 import { stripe } from "../lib/stripe";
 import Stripe from "stripe";
+
+import "keen-slider/keen-slider.min.css";
 
 interface HomeProps {
   products: {
@@ -46,7 +43,7 @@ export default function Home({ products }: HomeProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getStaticProps: GetStaticProps = async () => {
   const response = await stripe.products.list({
     expand: ["data.default_price"],
   });
@@ -58,7 +55,10 @@ export const getServerSideProps: GetServerSideProps = async () => {
       id: product.id,
       name: product.name,
       imageUrl: product.images[0],
-      price: price.unit_amount / 100,
+      price: new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      }).format(price.unit_amount / 100),
     };
   });
 
@@ -66,5 +66,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
     props: {
       products,
     },
+    revalidate: 60 * 60 * 2, //a cada 2hrs vai gerar a home
   };
 };
